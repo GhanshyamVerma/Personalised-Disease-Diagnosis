@@ -1,0 +1,2 @@
+Only one class present in both predictions and actual labels. Calculated accuracy for single class.
+Accuracy: 100%

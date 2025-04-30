@@ -1,0 +1,18 @@
+Confusion Matrix:
+"Not RVI"	"RVI"
+"Not RVI"	0	1
+"RVI"	0	30
+
+Overall Statistics:
+"overall_stats"
+"Accuracy"	0.967741935483871
+"Kappa"	0
+"AccuracyLower"	0.832978883769772
+"AccuracyUpper"	0.999183629928153
+"AccuracyNull"	1
+"AccuracyPValue"	1
+"McnemarPValue"	1
+
+Class Statistics:
+"Sensitivity"	"Specificity"	"Pos Pred Value"	"Neg Pred Value"	"Precision"	"Recall"	"F1"	"Prevalence"	"Detection Rate"	"Detection Prevalence"	"Balanced Accuracy"
+"1"	NA	0.967741935483871	NA	NA	0	NA	NA	0	0	0.032258064516129	NA

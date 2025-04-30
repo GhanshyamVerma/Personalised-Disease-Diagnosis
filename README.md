@@ -1,4 +1,4 @@
-# Personalized-Disease-Diagnosis-Assistants
+# Personalised-Disease-Diagnosis
 SCADDx and LOADDx can produce a short personalised ranked list of the most likely diseases for each patient at a requested time-point, from a Knowledge Graph with thousands of diseases. They enable personalised disease diagnosis by combining patients’ temporal gene expression data with a Knowledge Graph. The proposed algorithms can predict the most likely diseases for each patient along with their most affected genes, which can support healthcare professionals in their decision-making.
 
 ## How to Install and Run the Software

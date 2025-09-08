@@ -240,7 +240,7 @@ predict_test <- function(final_trained_model, holdout_test) {
 }
 
 # Write confusion matrix results to TXT
-write_confusion_to_txt <- function(predictions, holdout_test, model_name, dataset_name, output_path, KB_name = "____") {
+write_confusion_to_txt <- function(predictions, holdout_test, model_name, dataset_name, output_path, KG_name = "____") {
   
   # predict subject's health at target time point 
   holdout_test <- holdout_test %>% filter(Time > 0)
@@ -252,9 +252,9 @@ write_confusion_to_txt <- function(predictions, holdout_test, model_name, datase
   actual_labels <- factor(actual_labels)
   
   dataset_name <- substr(dataset_name, 1, nchar(dataset_name) - 4)
-  KB_name <- substr(KB_name, 1, nchar(KB_name) - 4)
+  KG_name <- substr(KG_name, 1, nchar(KG_name) - 4)
   # Create the filename
-  filename <- paste0(output_path, model_name, "_", dataset_name,"_", KB_name, "_confusion_matrix.txt")
+  filename <- paste0(output_path, model_name, "_", dataset_name,"_", KG_name, "_confusion_matrix.txt")
   
   # Open a connection for writing
   con <- file(filename, "w")

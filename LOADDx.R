@@ -41,10 +41,10 @@ read_gene_expression_data <- function(filename,input_path) {
   return(read.csv(file = path_filename, header = TRUE, sep=",", check.names = FALSE))
 }
 
-# Function to read Knowledge Bases
-read_KBs <- function(filename,input_path) {
+# Function to read Knowledge Graphs
+read_KGs <- function(filename,input_path) {
   path_filename <- paste0(input_path, filename)
-  print(paste0("Reading KB called ", path_filename))
+  print(paste0("Reading KG called ", path_filename))
   return(read.csv(file = path_filename, header = TRUE, sep=","))
 }
 
@@ -111,7 +111,7 @@ split_data <- function(Gene_Exp_Data, data_partition_seed, dataset_name) {
 
 
 # Train LOADDx model 
-LOADDx_model <- function(KB, train_data, Labels_train_data, ml_model_seed, dataset_name, KB_name, output_path, model_name, which_set, P_start = 25 , Q_start = 25) {
+LOADDx_model <- function(KG, train_data, Labels_train_data, ml_model_seed, dataset_name, KG_name, output_path, model_name, which_set, P_start = 25 , Q_start = 25) {
   set.seed(ml_model_seed)
   
   # enter the number of top "m" most likely diseases you want to see with computed probabilities for each patient 
@@ -160,8 +160,8 @@ LOADDx_model <- function(KB, train_data, Labels_train_data, ml_model_seed, datas
   #######################################################################################################################################
   
   
-  # extract all unique diseases from KB to assign computed disease weight
-  Data_Unique_Disease <- KB[!duplicated(KB[,c('disease_id')]), c('disease_name','disease_id')]
+  # extract all unique diseases from KG to assign computed disease weight
+  Data_Unique_Disease <- KG[!duplicated(KG[,c('disease_id')]), c('disease_name','disease_id')]
   
   # reorder the columns
   Data_Unique_Disease <- Data_Unique_Disease[ , c('disease_id','disease_name')]
@@ -190,13 +190,13 @@ LOADDx_model <- function(KB, train_data, Labels_train_data, ml_model_seed, datas
   # Extract dataset name only by removing .csv from the dataset file name
   dataset_name <- substr(dataset_name, 1, nchar(dataset_name) - 4)
   
-  # Extract KB name only by removing .csv from the KB file name
-  KB_name <- substr(KB_name, 1, nchar(KB_name) - 4)
+  # Extract KG name only by removing .csv from the KG file name
+  KG_name <- substr(KG_name, 1, nchar(KG_name) - 4)
   
   # Start the clock!
   start_loop_time <- proc.time()
   
-  #### Code for assigning weights to the diseases in KB based on changes observed in genes
+  #### Code for assigning weights to the diseases in KG based on changes observed in genes
   
   for(p in seq(P_start,P_end,P_step)){  # loop of p is for top genes / P MDEGs
     
@@ -265,8 +265,8 @@ LOADDx_model <- function(KB, train_data, Labels_train_data, ml_model_seed, datas
         
         for(j in 1:p){ # loop of j for number of genes
           
-          # extract all diseases' ids from KB that are associated with top P genes/ MDEGs of the subject
-          Disease_IDs <- KB[KB$gene_symbol == names(Gene_Transition_Matrix_top_p_Genes)[j], "disease_id" ]
+          # extract all diseases' ids from KG that are associated with top P genes/ MDEGs of the subject
+          Disease_IDs <- KG[KG$gene_symbol == names(Gene_Transition_Matrix_top_p_Genes)[j], "disease_id" ]
           
           if(length(Disease_IDs) == 0){
           }else{
@@ -295,8 +295,8 @@ LOADDx_model <- function(KB, train_data, Labels_train_data, ml_model_seed, datas
         
         for(j in 1:q){ # loop of j for number of bottom genes
           
-          # extract all diseases' ids from KB that are associated with bottom Q genes / LDEGs of the subject
-          Disease_IDs <- KB[KB$gene_symbol == names(Gene_Transition_Matrix_bottom_q_Genes)[j], "disease_id" ]
+          # extract all diseases' ids from KG that are associated with bottom Q genes / LDEGs of the subject
+          Disease_IDs <- KG[KG$gene_symbol == names(Gene_Transition_Matrix_bottom_q_Genes)[j], "disease_id" ]
           
           if(length(Disease_IDs) == 0){
           }else{
@@ -390,18 +390,18 @@ LOADDx_model <- function(KB, train_data, Labels_train_data, ml_model_seed, datas
         Disease_Prob <- generalized_softmax(Data_Unique_Disease_with_Probability$Disease_Weight)
         Data_Unique_Disease_with_Probability <- Data_Unique_Disease_with_Probability %>% mutate(Disease_Probability = Disease_Prob)
         
-        # extracting other entities from the KB for the top predicted disease
-        disease_class_n_others <- KB[1:m, c('disease_type', 'disease_class_name', 'disease_semantic_type','gene_symbol', 'protein_class', 'uniprot_id')]
+        # extracting other entities from the KG for the top predicted disease
+        disease_class_n_others <- KG[1:m, c('disease_type', 'disease_class_name', 'disease_semantic_type','gene_symbol', 'protein_class', 'uniprot_id')]
         disease_class_n_others <- disease_class_n_others %>% mutate(change_in_gene_expr = 0)
         
         for(d in 1:m){
-          disease_class_n_others$disease_type[d] <- KB[KB$disease_id == Data_Unique_Disease_with_Probability$disease_id[d], c('disease_type')][1]
-          disease_class_n_others$disease_class_name[d] <- KB[KB$disease_id == Data_Unique_Disease_with_Probability$disease_id[d], c('disease_class_name')][1] 
-          disease_class_n_others$disease_semantic_type[d] <- KB[KB$disease_id == Data_Unique_Disease_with_Probability$disease_id[d], c('disease_semantic_type')][1] 
+          disease_class_n_others$disease_type[d] <- KG[KG$disease_id == Data_Unique_Disease_with_Probability$disease_id[d], c('disease_type')][1]
+          disease_class_n_others$disease_class_name[d] <- KG[KG$disease_id == Data_Unique_Disease_with_Probability$disease_id[d], c('disease_class_name')][1] 
+          disease_class_n_others$disease_semantic_type[d] <- KG[KG$disease_id == Data_Unique_Disease_with_Probability$disease_id[d], c('disease_semantic_type')][1] 
           disease_class_n_others$gene_symbol[d] <- colnames(Gene_Transition_Matrix_top_p_Genes)[d]
           disease_class_n_others$change_in_gene_expr[d] <- Gene_Transition_Matrix_top_p_Genes[,d]
-          disease_class_n_others$protein_class[d] <- KB[KB$gene_symbol == colnames(Gene_Transition_Matrix_top_p_Genes)[d] & KB$disease_id == Data_Unique_Disease_with_Probability$disease_id[1], c('protein_class')][1] 
-          disease_class_n_others$uniprot_id[d] <- KB[KB$gene_symbol == colnames(Gene_Transition_Matrix_top_p_Genes)[d] & KB$disease_id == Data_Unique_Disease_with_Probability$disease_id[1], c('uniprot_id')][1] 
+          disease_class_n_others$protein_class[d] <- KG[KG$gene_symbol == colnames(Gene_Transition_Matrix_top_p_Genes)[d] & KG$disease_id == Data_Unique_Disease_with_Probability$disease_id[1], c('protein_class')][1] 
+          disease_class_n_others$uniprot_id[d] <- KG[KG$gene_symbol == colnames(Gene_Transition_Matrix_top_p_Genes)[d] & KG$disease_id == Data_Unique_Disease_with_Probability$disease_id[1], c('uniprot_id')][1] 
           
         }
         
@@ -420,7 +420,7 @@ LOADDx_model <- function(KB, train_data, Labels_train_data, ml_model_seed, datas
       
       if(which_set == "Holdout_test"){
         # Create the file name
-        filename <- paste0(output_path, model_name, "_", dataset_name,"_",KB_name,"_predicted_info_",which_set,"_Total_Sub",l,"_p_",p,"_q_",q,".csv")
+        filename <- paste0(output_path, model_name, "_", dataset_name,"_",KG_name,"_predicted_info_",which_set,"_Total_Sub",l,"_p_",p,"_q_",q,".csv")
         write.csv(Gene_Data_All_ti_prediction, file = filename, row.names = FALSE)
       }
       
@@ -533,7 +533,7 @@ LOADDx_model <- function(KB, train_data, Labels_train_data, ml_model_seed, datas
   
   if(which_set == "Holdout_test"){
     # Create the filename
-    filename <- paste0(output_path, model_name, "_", dataset_name,"_",KB_name,"_Accuracy_Matrix_",which_set,"_Total_Sub",l,"_p_",p,"_q_",q,".csv")
+    filename <- paste0(output_path, model_name, "_", dataset_name,"_",KG_name,"_Accuracy_Matrix_",which_set,"_Total_Sub",l,"_p_",p,"_q_",q,".csv")
     write.csv(Accuracy_matrix, file = filename, row.names = FALSE)
   }
   
@@ -545,7 +545,7 @@ LOADDx_model <- function(KB, train_data, Labels_train_data, ml_model_seed, datas
 
 
 # Write confusion matrix results to TXT
-write_confusion_to_txt <- function(predictions, holdout_test, model_name, dataset_name, output_path, KB_name = "____") {
+write_confusion_to_txt <- function(predictions, holdout_test, model_name, dataset_name, output_path, KG_name = "____") {
   
   # predict subject's health at target time point 
   holdout_test <- holdout_test %>% filter(Time > 0)
@@ -557,9 +557,9 @@ write_confusion_to_txt <- function(predictions, holdout_test, model_name, datase
   actual_labels <- factor(actual_labels)
   
   dataset_name <- substr(dataset_name, 1, nchar(dataset_name) - 4)
-  KB_name <- substr(KB_name, 1, nchar(KB_name) - 4)
+  KG_name <- substr(KG_name, 1, nchar(KG_name) - 4)
   # Create the filename
-  filename <- paste0(output_path, model_name, "_", dataset_name,"_", KB_name, "_confusion_matrix.txt")
+  filename <- paste0(output_path, model_name, "_", dataset_name,"_", KG_name, "_confusion_matrix.txt")
   
   # Open a connection for writing
   con <- file(filename, "w")
@@ -622,15 +622,15 @@ for(dataset_name in dataset_names) {
   splits <- split_data(Gene_Exp_Data, data_partition_seed, dataset_name)
   
   
-  # Read Knowledge Bases
+  # Read Knowledge Graphs
   
-  KB_names <- c("DisGeNet_Knowledge_Base.csv", "CTD_Knowledge_Base.csv")
-  for(KB_name in KB_names) {
-    KB <- read_KBs(KB_name, input_path)
+  KG_names <- c("DisGeNet_Knowledge_Graph.csv", "CTD_Knowledge_Graph.csv")
+  for(KG_name in KG_names) {
+    KG <- read_KGs(KG_name, input_path)
     
     
     print(paste0("Dataset name: ", dataset_name))
-    print(paste0("KB name: ", KB_name))
+    print(paste0("KG name: ", KG_name))
     
     
     ##################################################################################################
@@ -640,7 +640,7 @@ for(dataset_name in dataset_names) {
     # Model building using training data
     print("########### Starting LOADDx learning using training data ###########")
     
-    trained_LOADDx_model <- LOADDx_model(KB, splits$train_data, splits$train_data$True_Class_Label, ml_model_seed, dataset_name, KB_name, output_path, "LOADDx", "Train")
+    trained_LOADDx_model <- LOADDx_model(KG, splits$train_data, splits$train_data$True_Class_Label, ml_model_seed, dataset_name, KG_name, output_path, "LOADDx", "Train")
     
     
     # Print LOADDx training results
@@ -648,7 +648,7 @@ for(dataset_name in dataset_names) {
     print(trained_LOADDx_model$Accuracy_matrix)
     
     # Performing validation and hyper parameter selection using validation data
-    validation_LOADDx_model <- LOADDx_model(KB, splits$valid_data, splits$valid_data$True_Class_Label, ml_model_seed, dataset_name, KB_name, output_path, "LOADDx", "Validation")
+    validation_LOADDx_model <- LOADDx_model(KG, splits$valid_data, splits$valid_data$True_Class_Label, ml_model_seed, dataset_name, KG_name, output_path, "LOADDx", "Validation")
     
     
     # Print LOADDx validation results
@@ -664,7 +664,7 @@ for(dataset_name in dataset_names) {
     print(paste0("Final value of Q is: ", Q))
     
     # Final model building using SCADDx
-    final_LOADDx_trained_model <- LOADDx_model(KB, splits$full_train_data, splits$full_train_data$True_Class_Label, ml_model_seed, dataset_name, KB_name, output_path, "LOADDx", "Final_model", P, Q)
+    final_LOADDx_trained_model <- LOADDx_model(KG, splits$full_train_data, splits$full_train_data$True_Class_Label, ml_model_seed, dataset_name, KG_name, output_path, "LOADDx", "Final_model", P, Q)
     
     
     # Test LOADDx
@@ -672,14 +672,14 @@ for(dataset_name in dataset_names) {
     print("########### Starting prediction for holdout testset ###########")
     cat("\n")
     
-    LOADDx_predictions <- LOADDx_model(KB, splits$holdout_test, splits$holdout_test$True_Class_Label, ml_model_seed, dataset_name, KB_name, output_path, "LOADDx", "Holdout_test", final_LOADDx_trained_model$Accuracy_matrix$P, final_LOADDx_trained_model$Accuracy_matrix$Q)
+    LOADDx_predictions <- LOADDx_model(KG, splits$holdout_test, splits$holdout_test$True_Class_Label, ml_model_seed, dataset_name, KG_name, output_path, "LOADDx", "Holdout_test", final_LOADDx_trained_model$Accuracy_matrix$P, final_LOADDx_trained_model$Accuracy_matrix$Q)
     
     # Print LOADDx holdout testset results
     print("LOADDx holdout testset results: Accuracy on different values of top n diseases")
     print(LOADDx_predictions$Accuracy_matrix)
     
     # Write results to a text file for holdout testset
-    write_confusion_to_txt(LOADDx_predictions$Predictions$predicted_label_top_10, splits$holdout_test, "LOADDx", dataset_name, output_path, KB_name)
+    write_confusion_to_txt(LOADDx_predictions$Predictions$predicted_label_top_10, splits$holdout_test, "LOADDx", dataset_name, output_path, KG_name)
     
     
     # Result for Testset 1a or  Testset 2a only for Gene_Expression_Dataset_1 and Gene_Expression_Dataset_2
@@ -689,14 +689,14 @@ for(dataset_name in dataset_names) {
       # Create the file name
       result_filename <- paste0(data_name, "_holdout_testset_a_results.txt")
       
-      LOADDx_predictions <- LOADDx_model(KB, splits$holdout_test_a, splits$holdout_test_a$True_Class_Label, ml_model_seed, result_filename, KB_name, output_path, "LOADDx", "Holdout_test", final_LOADDx_trained_model$Accuracy_matrix$P, final_LOADDx_trained_model$Accuracy_matrix$Q)
+      LOADDx_predictions <- LOADDx_model(KG, splits$holdout_test_a, splits$holdout_test_a$True_Class_Label, ml_model_seed, result_filename, KG_name, output_path, "LOADDx", "Holdout_test", final_LOADDx_trained_model$Accuracy_matrix$P, final_LOADDx_trained_model$Accuracy_matrix$Q)
       
       # Print SCADDx holdout testset results
       print(paste0(data_name,"_LOADDx_Holdout_", "Testset_a_results:"))
       print(LOADDx_predictions$Accuracy_matrix)
       
       # Write results to a text file for holdout testset
-      write_confusion_to_txt(LOADDx_predictions$Predictions$predicted_label_top_10, splits$holdout_test_a, "LOADDx", result_filename, output_path, KB_name)
+      write_confusion_to_txt(LOADDx_predictions$Predictions$predicted_label_top_10, splits$holdout_test_a, "LOADDx", result_filename, output_path, KG_name)
       
     }
     
@@ -707,14 +707,14 @@ for(dataset_name in dataset_names) {
       # Create the file name
       result_filename <- paste0(data_name, "_holdout_testset_b_results.txt")
       
-      LOADDx_predictions <- LOADDx_model(KB, splits$holdout_test_b, splits$holdout_test_b$True_Class_Label, ml_model_seed, result_filename, KB_name, output_path, "LOADDx", "Holdout_test", final_LOADDx_trained_model$Accuracy_matrix$P, final_LOADDx_trained_model$Accuracy_matrix$Q)
+      LOADDx_predictions <- LOADDx_model(KG, splits$holdout_test_b, splits$holdout_test_b$True_Class_Label, ml_model_seed, result_filename, KG_name, output_path, "LOADDx", "Holdout_test", final_LOADDx_trained_model$Accuracy_matrix$P, final_LOADDx_trained_model$Accuracy_matrix$Q)
       
       # Print SCADDx holdout testset results
       print(paste0(data_name,"_LOADDx_Holdout_", "Testset_b_results:"))
       print(LOADDx_predictions$Accuracy_matrix)
       
       # Write results to a text file for holdout testset
-      write_confusion_to_txt(LOADDx_predictions$Predictions$predicted_label_top_10, splits$holdout_test_b, "LOADDx", result_filename, output_path, KB_name)
+      write_confusion_to_txt(LOADDx_predictions$Predictions$predicted_label_top_10, splits$holdout_test_b, "LOADDx", result_filename, output_path, KG_name)
     }
     
     ##################################################################################################
